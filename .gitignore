@@ -1,4 +1,9 @@
 *.zip
+
 data/
+logs/
+checkpoints/
+
+# OS generated files
 __MACOSX/
 __pycache__/
