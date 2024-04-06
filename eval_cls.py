@@ -51,9 +51,18 @@ if __name__ == '__main__':
     test_label = torch.from_numpy(np.load(args.test_label))
 
     # ------ TO DO: Make Prediction ------
-    pred_label = 
+    
+    # for i, data in enumerate(test_data):
+    #     data = data.reshape((1, args.num_points, 3)).to(args.device)
+    #     gt_label = test_label[i].to(args.device)
+    #     pred_label = model(data)
+        
+    #     pred_label = torch.argmax(pred_label, dim=-1, keepdim=False) #.reshape((1,1))
 
-    # Compute Accuracy
-    test_accuracy = pred_label.eq(test_label.data).cpu().sum().item() / (test_label.size()[0])
-    print ("test accuracy: {}".format(test_accuracy))
+
+    # pred_label = 
+
+    # # Compute Accuracy
+    # test_accuracy = pred_label.eq(test_label.data).cpu().sum().item() / (test_label.size()[0])
+    # print ("test accuracy: {}".format(test_accuracy))
 
