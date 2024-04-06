@@ -8,7 +8,7 @@ from models import cls_model, seg_model
 from data_loader import get_data_loader
 from utils import save_checkpoint, create_dir
 
-def train(train_dataloader, model, opt, epoch, args, writer):
+def train(train_dataloader, model, opt, epoch, args, writer, debug=False):
     
     model.train()
     step = epoch*len(train_dataloader)
@@ -21,11 +21,20 @@ def train(train_dataloader, model, opt, epoch, args, writer):
 
         # ------ TO DO: Forward Pass ------
         predictions = model(point_clouds)
-
+        if debug:
+            print("point_clouds.shape: ", point_clouds.shape)
+            print("labels.shape: ", labels.shape)
+            print("predictions.shape: ", predictions.shape)
+            print()
+            
         if (args.task == "seg"):
             labels = labels.reshape([-1])
             predictions = predictions.reshape([-1, args.num_seg_class])
-            
+        if debug:
+            print("labels.shape: ", labels.shape)
+            print("predictions.shape: ", predictions.shape)
+            print()
+        
         # Compute Loss
         criterion = torch.nn.CrossEntropyLoss()
         loss = criterion(predictions, labels)
@@ -101,7 +110,7 @@ def main(args):
     if args.task == "cls":
         model = cls_model().to(args.device)
     else:
-        model = seg_model(num_seg_class=args.num_seg_class).to(args.device)
+        model = seg_model(num_seg_classes=args.num_seg_class).to(args.device)
     
     # Load Checkpoint 
     if args.load_checkpoint:

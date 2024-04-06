@@ -35,7 +35,8 @@ class cls_model(nn.Module):
         output: tensor of size (B, num_classes)
         '''
         B, N, _ = points.size()
-        out_conv1 = F.relu(self.batch_norm1(self.conv1(points.permute(0, 2, 1))))
+        points = points.permute(0, 2, 1)
+        out_conv1 = F.relu(self.batch_norm1(self.conv1(points)))
         out_conv2 = F.relu(self.batch_norm2(self.conv2(out_conv1)))
         out_conv3 = F.relu(self.batch_norm3(self.conv3(out_conv2)))
         out_conv4 = F.relu(self.batch_norm4(self.conv4(out_conv3)))
@@ -75,27 +76,37 @@ class seg_model(nn.Module):
             nn.Conv1d(128, num_seg_classes, 1)
         )
 
-    def forward(self, points):
+    def forward(self, points, debug=False):
         '''
         points: tensor of size (B, N, 3)
                 , where B is batch size and N is the number of points per object (N=10000 by default)
         output: tensor of size (B, N, num_seg_classes)
         '''
         B, N, _ = points.size()
-        out_conv1 = F.relu(self.batch_norm1(self.conv1(points.permute(0, 2, 1))))
-        out_conv2 = F.relu(self.batch_norm2(self.conv2(out_conv1)))
+        points = points.permute(0, 2, 1)
+        out_conv1 = F.relu(self.batch_norm1(self.conv1(points)))
+        out_conv2 = F.relu(self.batch_norm2(self.conv2(out_conv1))) # 64 - local features
+        
         out_conv3 = F.relu(self.batch_norm3(self.conv3(out_conv2)))
         out_conv4 = F.relu(self.batch_norm4(self.conv4(out_conv3)))
         
-        # out_max = F.max_pool1d(out_conv4, N).squeeze(dim=-1)
         out_max = torch.amax(out_conv4, dim=-1)
-        out_max = out_max.unsqueeze(-1).repeat(1, 1, N)
-        out = self.net(torch.cat([out_conv4, out_max], dim=1))
+        out_rep = out_max.unsqueeze(-1).repeat(1, 1, N)
+        out_combined = torch.cat((out_conv2, out_rep), dim=1)
+        out = self.net(out_combined)
         
-        # global_out = torch.amax(global_out, dim=-1, keepdims=True).repeat(1, 1, N)
-        # out = torch.cat((local_out, global_out), dim=1)
-        # out = self.point_layer(out).transpose(1, 2)
-        
+        if debug:
+            print("points.shape: ", points.shape)
+            print("out_conv1.shape: ", out_conv1.shape)
+            print("out_conv2.shape: ", out_conv2.shape)
+            print("out_conv3.shape: ", out_conv3.shape)
+            print("out_conv4.shape: ", out_conv4.shape)
+            print("out_max.shape: ", out_max.shape)
+            print("out_rep.shape: ", out_rep.shape)
+            print("out_combined.shape: ", out_combined.shape)
+            print("out.shape: ", out.shape)
+            print()
+            
         return out
 
 
