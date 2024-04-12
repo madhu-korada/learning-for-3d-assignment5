@@ -94,6 +94,7 @@ class seg_model(nn.Module):
         out_rep = out_max.unsqueeze(-1).repeat(1, 1, N)
         out_combined = torch.cat((out_conv2, out_rep), dim=1)
         out = self.net(out_combined)
+        out = out.permute(0, 2, 1)
         
         if debug:
             print("points.shape: ", points.shape)

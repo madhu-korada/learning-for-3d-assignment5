@@ -4,6 +4,7 @@ import argparse
 import torch
 from models import cls_model
 from utils import create_dir
+from data_loader import get_data_loader
 
 def create_parser():
     """Creates a parser for command-line arguments.
@@ -23,6 +24,12 @@ def create_parser():
 
     parser.add_argument('--exp_name', type=str, default="exp", help='The name of the experiment')
 
+    parser.add_argument('--main_dir', type=str, default='./data/')
+    parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
+    parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
+    
+    parser.add_argument('--task', type=str, default="cls", help='The task: cls or seg')
+    
     return parser
 
 
@@ -51,18 +58,28 @@ if __name__ == '__main__':
     test_label = torch.from_numpy(np.load(args.test_label))
 
     # ------ TO DO: Make Prediction ------
+    test_dataloader = get_data_loader(args=args, train=False)
+    print ("successfully loaded data")
     
-    # for i, data in enumerate(test_data):
-    #     data = data.reshape((1, args.num_points, 3)).to(args.device)
-    #     gt_label = test_label[i].to(args.device)
-    #     pred_label = model(data)
-        
-    #     pred_label = torch.argmax(pred_label, dim=-1, keepdim=False) #.reshape((1,1))
+    correct_obj = 0
+    num_obj = 0
+    preds_labels_arr = []
+    for batch in test_dataloader:
+        point_clouds, labels = batch
+        point_clouds = point_clouds[:, ind].to(args.device)
+        labels = labels.to(args.device).to(torch.long)
 
+        with torch.no_grad():
+            pred_labels = model(point_clouds).argmax(dim=1, keepdim=False)
+            # pred_labels = torch.argmax(model(point_clouds), dim=-1, keepdim=False)
+        correct_obj += pred_labels.eq(labels.data).cpu().sum().item()
+        num_obj += labels.size()[0]
 
-    # pred_label = 
+        preds_labels_arr.append(pred_labels)
 
-    # # Compute Accuracy
-    # test_accuracy = pred_label.eq(test_label.data).cpu().sum().item() / (test_label.size()[0])
-    # print ("test accuracy: {}".format(test_accuracy))
-
+    accuracy = correct_obj / num_obj
+    print(f"test accuracy: {accuracy}")
+    preds_labels = torch.cat(preds_labels_arr).detach().cpu()
+    # np.save(f"{args.output_dir}/preds_labels.npy", preds_labels)
+    
+    
