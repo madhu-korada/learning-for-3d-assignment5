@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 
 import torch
+import pytorch3d
 from models import seg_model
 from data_loader import get_data_loader
 from utils import create_dir, viz_seg
@@ -60,6 +61,13 @@ if __name__ == '__main__':
 
     test_dataloader = get_data_loader(args=args, train=False)
     
+    # rotation
+    rotation = False
+    if rotation:
+        rotation = torch.tensor([20, 0, 0])
+        R = pytorch3d.transforms.euler_angles_to_matrix(rotation, 'XYZ')
+        test_dataloader.dataset.data = (R @ test_dataloader.dataset.data.transpose(1, 2)).transpose(1, 2)
+    
     # ------ TO DO: Make Prediction ------
     # pred_label = 
     correct_point = 0
@@ -81,23 +89,39 @@ if __name__ == '__main__':
     print(f"test accuracy: {test_accuracy}")
     preds_labels_arr = torch.cat(preds_labels_arr).detach().cpu()
     
-    idx = args.i #0
-    point_cloud = test_dataloader.dataset.data[idx, ind].detach().cpu()
-    gt_label = test_dataloader.dataset.label[idx, ind].detach().cpu()
-    
-    pred_label = preds_labels_arr[idx]
-    
-    correct_point = pred_label.eq(gt_label.data).cpu().sum().item()
-    num_point = gt_label.reshape((-1,1)).size()[0]
-    accuracy = correct_point / num_point
-    print ("test accuracy for idx {}: {}".format(idx, accuracy))
+    idxs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    for idx in idxs:
+        point_cloud = test_dataloader.dataset.data[idx, ind].detach().cpu()
+        gt_label = test_dataloader.dataset.label[idx, ind].detach().cpu()
+        
+        pred_label = preds_labels_arr[idx]
+        
+        correct_point = pred_label.eq(gt_label.data).cpu().sum().item()
+        num_point = gt_label.reshape((-1,1)).size()[0]
+        accuracy = correct_point / num_point
+        print ("test accuracy for idx {}: {}".format(idx, accuracy))
 
-    # test_accuracy = pred_label.eq(test_label.data).cpu().sum().item() / (test_label.reshape((-1,1)).size()[0])
-    # print ("test accuracy: {}".format(test_accuracy))
-
-    # Visualize Segmentation Result (Pred VS Ground Truth)
-    viz_seg(point_cloud, gt_label, "{}/gt_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
-    viz_seg(point_cloud, pred_label, "{}/pred_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
+        # Visualize Segmentation Result (Pred VS Ground Truth)
+        viz_seg(point_cloud, gt_label, "{}/gt_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
+        viz_seg(point_cloud, pred_label, "{}/pred_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
     
-    # viz_seg(test_data[args.i], test_label[args.i], "{}/gt_{}.gif".format(args.output_dir, args.exp_name), args.device)
-    # viz_seg(test_data[args.i], pred_label[args.i], "{}/pred_{}.gif".format(args.output_dir, args.exp_name), args.device)
+    # idx = args.i #0
+    # point_cloud = test_dataloader.dataset.data[idx, ind].detach().cpu()
+    # gt_label = test_dataloader.dataset.label[idx, ind].detach().cpu()
+    
+    # pred_label = preds_labels_arr[idx]
+    
+    # correct_point = pred_label.eq(gt_label.data).cpu().sum().item()
+    # num_point = gt_label.reshape((-1,1)).size()[0]
+    # accuracy = correct_point / num_point
+    # print ("test accuracy for idx {}: {}".format(idx, accuracy))
+
+    # # test_accuracy = pred_label.eq(test_label.data).cpu().sum().item() / (test_label.reshape((-1,1)).size()[0])
+    # # print ("test accuracy: {}".format(test_accuracy))
+
+    # # Visualize Segmentation Result (Pred VS Ground Truth)
+    # viz_seg(point_cloud, gt_label, "{}/gt_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
+    # viz_seg(point_cloud, pred_label, "{}/pred_{}_idx_{}.gif".format(args.output_dir, args.exp_name, idx), args.device)
+    
+    # # viz_seg(test_data[args.i], test_label[args.i], "{}/gt_{}.gif".format(args.output_dir, args.exp_name), args.device)
+    # # viz_seg(test_data[args.i], pred_label[args.i], "{}/pred_{}.gif".format(args.output_dir, args.exp_name), args.device)

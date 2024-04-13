@@ -4,6 +4,8 @@ data/
 logs/
 checkpoints/
 output/
+output_rot/
+output_og/
 
 # OS generated files
 __MACOSX/

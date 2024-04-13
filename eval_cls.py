@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 
 import torch
+import pytorch3d
 from models import cls_model
 from utils import create_dir, viz_cls
 from data_loader import get_data_loader
@@ -61,6 +62,13 @@ if __name__ == '__main__':
     # ------ TO DO: Make Prediction ------
     test_dataloader = get_data_loader(args=args, train=False)
     print ("successfully loaded data")
+    
+    # rotation
+    rotation = False
+    if rotation:
+        rotation = torch.tensor([20, 0, 0])
+        R = pytorch3d.transforms.euler_angles_to_matrix(rotation, 'XYZ')
+        test_dataloader.dataset.data = (R @ test_dataloader.dataset.data.transpose(1, 2)).transpose(1, 2)
     
     correct_obj = 0
     num_obj = 0
