@@ -3,6 +3,7 @@
 data/
 logs/
 checkpoints/
+output/
 
 # OS generated files
 __MACOSX/
