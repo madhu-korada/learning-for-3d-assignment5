@@ -3,7 +3,7 @@ import argparse
 
 import torch
 from models import cls_model
-from utils import create_dir
+from utils import create_dir, viz_cls
 from data_loader import get_data_loader
 
 def create_parser():
@@ -44,7 +44,8 @@ if __name__ == '__main__':
     model = cls_model(num_classes=args.num_cls_class).to(args.device)
     
     # Load Model Checkpoint
-    model_path = './checkpoints/cls/{}.pt'.format(args.load_checkpoint)
+    # model_path = './checkpoints/cls/{}.pt'.format(args.load_checkpoint)
+    model_path = './checkpoints/cls/best_model.pt'
     with open(model_path, 'rb') as f:
         state_dict = torch.load(f, map_location=args.device)
         model.load_state_dict(state_dict)
@@ -81,5 +82,52 @@ if __name__ == '__main__':
     print(f"test accuracy: {accuracy}")
     preds_labels = torch.cat(preds_labels_arr).detach().cpu()
     # np.save(f"{args.output_dir}/preds_labels.npy", preds_labels)
+    
+    # find where all the predictions are wrong
+    # wrong_preds, correct_preds = [], []
+    # for i in range(len(test_label)):
+    #     if test_label[i] != preds_labels[i]:
+    #         wrong_preds.append(i)
+    #     else:
+    #         correct_preds.append(i)
+    
+    wrong_preds_idx = torch.argwhere(test_label != preds_labels)#.flatten()
+    correct_preds_idx = torch.argwhere(test_label == preds_labels)
+    
+    print(f"Number of correct predictions: {wrong_preds_idx.shape}")
+    print(f"Number of wrong predictions: {correct_preds_idx.shape}")
+    
+    
+    num_gifs = 0
+    for i in range(len(wrong_preds_idx)):
+        # print(f"Wrong prediction at index {wrong_preds_idx[i]}")
+        idx = wrong_preds_idx[i].item()
+        point_cloud = test_dataloader.dataset.data[idx, ind].detach().cpu()
+        gt_label = test_dataloader.dataset.label[idx].detach().cpu().item()
+        pred_label = preds_labels[idx].detach().cpu().item()
+        
+        gif_path = f"{args.output_dir}/cls_wrong_pred_idx_{i}_gt_{gt_label}_pred_{pred_label}.gif"
+        viz_cls(point_cloud, gif_path, args.device)
+        
+        num_gifs += 1
+        if num_gifs >= 10:
+            break
+    
+    num_gifs = 0
+    for i in range(len(correct_preds_idx)):
+        # print(f"Correct prediction at index {correct_preds_idx[i]}")
+        idx = correct_preds_idx[i].item()
+        point_cloud = test_dataloader.dataset.data[idx, ind].detach().cpu()
+        gt_label = test_dataloader.dataset.label[idx].detach().cpu().item()
+        pred_label = preds_labels[idx].detach().cpu().item()
+        
+        gif_path = f"{args.output_dir}/cls_correct_pred_idx_{i}_gt_{gt_label}_pred_{pred_label}.gif"
+        viz_cls(point_cloud, gif_path, args.device)
+    
+        num_gifs += 1
+        if num_gifs >= 10:
+            break
+    
+        
     
     

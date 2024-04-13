@@ -45,6 +45,7 @@ if __name__ == '__main__':
     
     # Load Model Checkpoint
     model_path = './checkpoints/seg/{}.pt'.format(args.load_checkpoint)
+    model_path = './checkpoints/seg/best_model.pt'
     with open(model_path, 'rb') as f:
         state_dict = torch.load(f, map_location=args.device)
         model.load_state_dict(state_dict)
